@@ -63,7 +63,7 @@ class CommonDialog(wx.Dialog):
             selectValue = lista[fieldName[1]] if lista else initSel
         selectIndex = choices.index(selectValue) if selectValue is not None else 0
         choice.SetSelection(selectIndex)
-        self.Bind(wx.EVT_CHOICE, self.OnChoiceType, choice)
+        #self.Bind(wx.EVT_CHOICE, self.OnChoiceType, choice)
         sizer.Add(lblCtrl, 0, 0)
         sizer.Add(choice, 0, 0)
         return (lblCtrl, choice)
