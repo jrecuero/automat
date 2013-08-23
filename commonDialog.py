@@ -25,7 +25,7 @@ class CommonDialog(wx.Dialog):
         mainSizer.AddSpacer(25)
         self.SetSizer(mainSizer)
         self.Fit()
-        
+
     def _handleDefaults(self, fieldName):
         txtValue = ''
         if self.defaults:
@@ -35,7 +35,7 @@ class CommonDialog(wx.Dialog):
             else:
                 txtValue = getattr(self.defaults, fieldName, '')
         return txtValue
-    
+
     def _createLabelTextCtrlEntry(self, label, fieldName, size, validator):
         txtValue = self._handleDefaults(fieldName)
         lblCtrl = wx.StaticText(self, -1, label)
@@ -47,11 +47,11 @@ class CommonDialog(wx.Dialog):
         sizer.Add(lblCtrl, 0, 0)
         sizer.Add(txtCtrl, 0, 0)
         return (lblCtrl, txtCtrl)
-    
+
     def insertLabelTextCtrlEntry(self, sizer, pos, label, fieldName, size=(200, -1), validator=wx.DefaultValidator):
         lblCtrl, txtCtrl = self._createLabelTextCtrlEntry(label, fieldName, size, validator)
         sizer.Insert(pos, lblCtrl, 0, 0)
-        sizer.Insert(pos+1, txtCtrl, 0, 0)
+        sizer.Insert(pos + 1, txtCtrl, 0, 0)
         return (lblCtrl, txtCtrl)
 
     def addLabelChoiceEntry(self, sizer, label, choices, initSel, fieldName):

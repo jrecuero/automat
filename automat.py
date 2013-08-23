@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 
 import wx
-import service
-import tunnel
-import accessport
-import clientring
-import networkring
-import endpoint
+#import service
+#import tunnel
+#import accessport
+#import clientring
+#import networkring
+#import endpoint
 import event
 import resource
 import config
 import configDialog
+
 
 class Automatization(wx.Frame):
 
@@ -57,28 +58,10 @@ class Automatization(wx.Frame):
             button = wx.Button(panel, -1, resId)
             sizer.Add(button, 1, wx.HORIZONTAL)
             self.Bind(wx.EVT_BUTTON, self.OnClickConfig, button)
-#         serviceBtn     = wx.Button(panel, -1, 'Service')
-#         tunnelBtn      = wx.Button(panel, -1, 'Tunnel')
-#         accessPortBtn  = wx.Button(panel, -1, 'Access Port')
-#         clientRingBtn  = wx.Button(panel, -1, 'Client Ring')
-#         networkRingBtn = wx.Button(panel, -1, 'Network Ring')
-#         endPointBtn = wx.Button(panel, -1, 'End Point')
         eventBtn    = wx.Button(panel, -1, 'Event')
 
-#         sizer.Add(serviceBtn, 1, wx.HORIZONTAL)
-#         sizer.Add(tunnelBtn, 1, wx.HORIZONTAL)
-#         sizer.Add(accessPortBtn, 1, wx.HORIZONTAL)
-#         sizer.Add(clientRingBtn, 1, wx.HORIZONTAL)
-#         sizer.Add(networkRingBtn, 1, wx.HORIZONTAL)
-#         sizer.Add(endPointBtn, 1, wx.HORIZONTAL)
         sizer.Add(eventBtn, 1, wx.HORIZONTAL)
 
-#         #self.Bind(wx.EVT_BUTTON, self.OnClickService, serviceBtn)
-#         self.Bind(wx.EVT_BUTTON, self.OnClickTunnel, tunnelBtn)
-#         self.Bind(wx.EVT_BUTTON, self.OnClickAccessPort, accessPortBtn)
-#         self.Bind(wx.EVT_BUTTON, self.OnClickClientRing, clientRingBtn)
-#         self.Bind(wx.EVT_BUTTON, self.OnClickNetworkRing, networkRingBtn)
-#         self.Bind(wx.EVT_BUTTON, self.OnClickEndPoint, endPointBtn)
         self.Bind(wx.EVT_BUTTON, self.OnClickEvent, eventBtn)
 
         return sizer
@@ -114,41 +97,13 @@ class Automatization(wx.Frame):
 
     def OnCloseWindow(self, ev):
         self.Destroy()
-        
+
     def OnClickConfig(self, ev):
         #dialog = None
         resId    = ev.EventObject.Label
         resource = config.getResourceFromId(resId)
         dialog   = configDialog.ConfigDialog(self, -1, resource)
-#         if ev.EventObject.Label == 'services':
-#             dialog= configHandler.ConfigDialog(self, -1, 'services', config.configuration['services'])
-#         elif ev.EventObject.Label == 'tunnels':
-#             dialog= configHandler.ConfigDialog(self, -1, 'tunnels', config.configuration['tunnels'])
         self._createResource(dialog)
-
-#     def OnClickService(self, ev):
-#         serviceDlg = service.ServiceDialog(self, -1)
-#         self._createResource(serviceDlg)
-# 
-#     def OnClickTunnel(self, ev):
-#         tunnelDlg = tunnel.TunnelDialog(self, -1)
-#         self._createResource(tunnelDlg)
-# 
-#     def OnClickAccessPort(self, ev):
-#         accessPortDlg = accessport.AccessPortDialog(self, -1)
-#         self._createResource(accessPortDlg)
-# 
-#     def OnClickClientRing(self, ev):
-#         clientRingDlg = clientring.ClientRingDialog(self, -1)
-#         self._createResource(clientRingDlg)
-# 
-#     def OnClickNetworkRing(self, ev):
-#         networkRingDlg = networkring.NetworkRingDialog(self, -1)
-#         self._createResource(networkRingDlg)
-# 
-#     def OnClickEndPoint(self, ev):
-#         endPointDlg = endpoint.EndPointDialog(self, -1)
-#         self._createResource(endPointDlg)
 
     def OnClickEvent(self, ev):
         eventDlg = event.EventDialog(self, -1)
