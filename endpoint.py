@@ -2,26 +2,38 @@
 
 
 def getResourceId():
+    """ Get the End Point Resource Id.
+    """
     return 'End Point'
 
 
 def getResourceTag():
+    """ Get the End Point Resource YAML Tag.
+    """
     return 'endpoints'
 
 
 def _getAllServices(dlg):
+    """ Get all Services Names entered in the system.
+    """
     return dlg.GetParent().resourceHdlr.getAllServicesName()
 
 
 def _getDefaultService(dlg):
+    """ Get default service name.
+    """
     return None
 
 
 def _getAllPorts(dlg):
+    """ Get all Ports Names entered in the system.
+    """
     return dlg.GetParent().resourceHdlr.getAllPortsName()
 
 
 def _getDefaultPort(dlg):
+    """ Get default port name.
+    """
     return None
 
 

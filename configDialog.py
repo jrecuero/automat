@@ -73,51 +73,99 @@ class ConfigDialog(commonDialog.CommonDialog):
         self.resource = resource
         commonDialog.CommonDialog.__init__(self, parent, ID, 'Create %s' % config.getResourceId(self.resource), size=(400, 300), defaults=defaults)
 
-    def addCtrlFromResource(self, sizer, attr, index=None):
+    def addCtrlFromResource(self, attr, index=None):
         attrName = config.getResourceAttrName(attr)
         dispName = config.getResourceAttrDisplay(attr)
         attrType = config.getResourceAttrType(attr)
         attrDim  = config.getResourceAttrDim(attr)
-        ctrl = []
+        attrDeps = config.getResourceAttrDim(attr)
+        lbl, ctrl = [], []
         if attrType in (config.RES_TYPE_SINGLE, ):
-            dummy, ctrl = self.addLabelTextCtrlEntry(sizer,
-                                                     '%s: ' % dispName,
-                                                     attrName if index is None else (attrName, index))
-        elif attrType in (config.RES_TYPE_LIST, ):
-            dummy, ctrl = self.addLabelChoiceEntry(sizer,
+            lbl, ctrl = self.addLabelTextCtrlEntry(self.sizer,
                                                    '%s: ' % dispName,
-                                                   config.getResourceAttrValues(attr)(self),
-                                                   config.getResourceAttrDefault(attr)(self),
-                                                   attrName if index is None else (attrName, index))
+                                                   fieldName=attrName if index is None else (attrName, index),
+                                                   data=attrDeps)
+            self.Bind(wx.EVT_TEXT, self.OnTextCtrlAction, ctrl)
+        elif attrType in (config.RES_TYPE_LIST, ):
+            lbl, ctrl = self.addLabelChoiceEntry(self.sizer,
+                                                 '%s: ' % dispName,
+                                                 choices=config.getResourceAttrValues(attr)(self),
+                                                 initSel=config.getResourceAttrDefault(attr)(self),
+                                                 fieldName=attrName if index is None else (attrName, index),
+                                                 data=attrDeps)
         elif attrType in (config.RES_TYPE_SINGLE_ARRAY, ):
-            for index in xrange(attrDim):
-                dummy, aCtrl = self.addLabelTextCtrlEntry(sizer,
-                                                          '%s [%s]: ' % (dispName, index),
-                                                          attrName if index is None else (attrName, index))
+            for i in xrange(attrDim):
+                lbl, aCtrl = self.addLabelTextCtrlEntry(self.sizer,
+                                                        '%s [%s]: ' % (dispName, i),
+                                                        attrName if index is None else (attrName, index),
+                                                        data=attrDeps)
                 ctrl.append(aCtrl)
+                self.Bind(wx.EVT_TEXT, self.OnTextCtrlAction, aCtrl)
         elif attrType in (config.RES_TYPE_LIST_ARRAY, ):
-            for index in xrange(attrDim):
-                dummy, aCtrl = self.addLabelChoiceEntry(sizer,
-                                                        '%s [%s]: ' % (dispName, index),
-                                                        config.getResourceAttrValues(attr)(self),
-                                                        config.getResourceAttrDefault(attr)(self),
-                                                        attrName if index is None else (attrName, index))
+            for i in xrange(attrDim):
+                lbl, aCtrl = self.addLabelChoiceEntry(self.sizer,
+                                                      '%s [%s]: ' % (dispName, i),
+                                                      choices=config.getResourceAttrValues(attr)(self),
+                                                      initSel=config.getResourceAttrDefault(attr)(self),
+                                                      fieldName=attrName if index is None else (attrName, index),
+                                                      data=attrDeps)
                 self.ctrl.append(aCtrl)
         elif attrType in (config.RES_TYPE_GROUP, ):
-            for index in xrange(attrDim):
+            for i in xrange(attrDim):
+                lbl.append({})
                 ctrl.append({})
-                for childAttr in config.getResourceAttrValues(attr):
+                for childAttr in [aAttr for aAttr in config.getResourceAttrValues(attr) if self.isAttrEnable(aAttr)]:
                     childAttrName = config.getResourceAttrName(childAttr)
-                    ctrl[index][childAttrName] = self.addCtrlFromResource(sizer, childAttr, index)
-        return ctrl
+                    lbl[i][childAttrName], ctrl[i][childAttrName] = self.addCtrlFromResource(childAttr, i)
+        return (lbl, ctrl)
+
+    def isAttrEnable(self, attr):
+        return  config.getResourceAttrEnable(attr)
 
     def createCtrl(self):
-        sizer = wx.FlexGridSizer(rows=len(config.getResourceAttrs(self.resource)), cols=2, hgap=5, vgap=10)
-        self.ctrl = {}
+        self.sizer = wx.FlexGridSizer(rows=len(config.getResourceAttrs(self.resource)), cols=2, hgap=5, vgap=10)
+        self.lbl, self.ctrl = {}, {}
         for attr in config.getResourceAttrs(self.resource):
-            attrName = config.getResourceAttrName(attr)
-            self.ctrl[attrName] = self.addCtrlFromResource(sizer, attr)
-        return sizer
+            if self.isAttrEnable(attr):
+                attrName = config.getResourceAttrName(attr)
+                self.lbl[attrName], self.ctrl[attrName] = self.addCtrlFromResource(attr)
+        return self.sizer
+
+    def createNewCtrl(self, attr):
+        attrName = config.getResourceAttrName(attr)
+        if not hasattr(self.lbl, attrName) and not hasattr(self.ctrl, attrName):
+            self.lbl[attrName], self.ctrl[attrName] = self.addCtrlFromResource(attr)
+            self.sizer.Layout()
+            self.Fit()
+            self.Refresh()
+            self.Update()
+            self.Thaw()
+
+    def removeNewCtrl(self, attr):
+        attrName = config.getResourceAttrName(attr)
+        if hasattr(self.lbl, attrName) and hasattr(self.ctrl, attrName):
+            self.sizer.Remove(self.lbl[attrName])
+            self.sizer.Remove(self.ctrl[attrName])
+            self.lbl[attrName].Destroy()
+            self.ctrl[attrName].Destroy()
+            del self.lbl[attrName]
+            del self.ctrl[attrName]
+            self.sizer.Layout()
+            self.Fit()
+
+    def OnTextCtrlAction(self, ev):
+        evObj = ev.GetEventObject()
+        for dep in evObj.customData:
+            fields   = config.getResourceAttrDepsFields(dep)
+            handler  = config.getResourceAttrDepsHandler(dep)
+            newField = config.getResourceAttrDepsHandler(dep)
+            for field, fieldValue in fields.iteritems():
+                if self.ctrl[field].GetValue() not in fieldValue:
+                    continue
+            print fields, handler, newField
+            newAttr = config.lookForResourceAtttWithName(self.resource, newField)
+            if newAttr:
+                self.createNewCtrl(newAttr)
 
     def getSelectionFromResource(self, attr, ctrl):
         dicta = []

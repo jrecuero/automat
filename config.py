@@ -4,13 +4,15 @@ import accessport
 import clientring
 import networkring
 import endpoint
+import event
 
 RESOURCES = [service.RESOURCE,
              tunnel.RESOURCE,
              accessport.RESOURCE,
              clientring.RESOURCE,
              networkring.RESOURCE,
-             endpoint.RESOURCE]
+             endpoint.RESOURCE,
+             event.RESOURCE, ]
 
 RES_TYPE_SINGLE        = 1
 RES_TYPE_LIST          = 2
@@ -77,5 +79,32 @@ def getResourceAttrValues(attr):
     return attr['values']
 
 
+def getResourceAttrEnable(attr):
+    return attr.setdefault('enable', True)
+
+
+def getResourceAttrDeps(attr):
+    return attr.setdefault('deps', [])
+
+
+def getResourceAttrDepsFields(dep):
+    return dep.setdefault('fields', {})
+
+
+def getResourceAttrDepsHandler(dep):
+    return dep.setdefault('handler', None)
+
+
+def getResourceAttrDepsNewField(dep):
+    return dep.setdefault('newfield', None)
+
+
 def isAttrTheAttrName(attr):
     return getResourceAttrName(attr) in ('name', )
+
+
+def lookForResourceAtttWithName(resource, attrName):
+    for attr in getResourceAttrs(resource):
+        if attrName == getResourceAttrName(attr):
+            return attr
+    return None

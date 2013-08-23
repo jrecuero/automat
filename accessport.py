@@ -2,11 +2,16 @@
 
 
 def getResourceId():
+    """ Get the Access Port Resource Id.
+    """
     return 'Access Ports'
 
 
 def getResourceTag():
+    """ Get the Access Port Resouce YAML Tag.
+    """
     return 'accessports'
+
 
 RESOURCE = {'id':   getResourceId(),
             'tag':  getResourceTag(),
