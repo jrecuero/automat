@@ -11,6 +11,21 @@ class Entity(object):
             for key, val in attributes.iteritems():
                 attrVal = val if not isinstance(val, list) else [valItem for valItem in val] 
                 setattr(self, key, attrVal)
+                self._expandAttrList(attrVal)
+
+    def _expandAttrList(self, attrVal):
+        """ Expand a list as attributes.
+        
+        This method takes a list of entries, and for every one, it creates
+        attributes in the object. 
+        List is an array, and every entry in the array is a dictionary, where
+        the key will be the attribute and the value will be the attribute value.
+        """
+        if isinstance(attrVal, list):
+            for k, v in [(k, v) for value in attrVal for (k, v) in value.iteritems()]:
+                if not hasattr(self, k):
+                    setattr(self, k, [])
+                getattr(self, k).append(v)
                 
     def getResourceId(self):
         return config.getResourceId(self._resource)
@@ -57,40 +72,102 @@ class ConfigDialog(commonDialog.CommonDialog):
     def __init__(self, parent, ID, resource, defaults=None):
         self.resource = resource
         commonDialog.CommonDialog.__init__(self, parent, ID, 'Create %s' % config.getResourceId(self.resource), size=(400, 300), defaults=defaults)
-
+        
+    def addCtrlFromResource(self, sizer, attr, index=None):
+        attrName = config.getResourceAttrName(attr)
+        dispName = config.getResourceAttrDisplay(attr)
+        attrType = config.getResourceAttrType(attr)
+        attrDim  = config.getResourceAttrDim(attr)
+        ctrl = []
+        if attrType in (config.RES_TYPE_SINGLE, ):
+            dummy, ctrl = self.addLabelTextCtrlEntry(sizer, 
+                                                     '%s: ' % dispName, 
+                                                     attrName if index is None else (attrName, index))
+        elif attrType in (config.RES_TYPE_LIST, ):
+            dummy, ctrl = self.addLabelChoiceEntry(sizer,
+                                                   '%s: ' % dispName,
+                                                   config.getResourceAttrValues(attr)(self),
+                                                   config.getResourceAttrDefault(attr)(self),
+                                                   attrName if index is None else (attrName, index))
+        elif attrType in (config.RES_TYPE_SINGLE_ARRAY, ):
+            for index in xrange(attrDim):
+                dummy, aCtrl = self.addLabelTextCtrlEntry(sizer, 
+                                                         '%s [%s]: ' % (dispName, index), 
+                                                         attrName if index is None else (attrName, index))
+                ctrl.append(aCtrl)
+        elif attrType in (config.RES_TYPE_LIST_ARRAY, ):
+            for index in xrange(attrDim):
+                dummy, aCtrl = self.addLabelChoiceEntry(sizer, 
+                                                       '%s [%s]: ' % (dispName, index), 
+                                                       config.getResourceAttrValues(attr)(self),
+                                                       config.getResourceAttrDefault(attr)(self),
+                                                       attrName if index is None else (attrName, index))
+                self.ctrl.append(aCtrl)
+        elif attrType in (config.RES_TYPE_GROUP, ):
+            for index in xrange(attrDim):
+                ctrl.append({})
+                for childAttr in config.getResourceAttrValues(attr):
+                    childAttrName = config.getResourceAttrName(childAttr)
+                    ctrl[index][childAttrName] = self.addCtrlFromResource(sizer, childAttr, index)
+        return ctrl
+    
     def createCtrl(self):
         sizer = wx.FlexGridSizer(rows=len(config.getResourceAttrs(self.resource)), cols=2, hgap=5, vgap=10)
         self.ctrl = {}
         for attr in config.getResourceAttrs(self.resource):
             attrName = config.getResourceAttrName(attr)
-            dispName = config.getResourceAttrDisplay(attr)
-            attrType = config.getResourceAttrType(attr)
-            attrDim  = config.getResourceAttrDim(attr)
-            if attrType in (config.RES_TYPE_SINGLE, ):
-                dummy, self.ctrl[attrName] = self.addLabelTextCtrlEntry(sizer, '%s: ' % dispName, attrName)
-            elif attrType in (config.RES_TYPE_LIST, ):
-                dummy, self.ctrl[attrName]  = self.addLabelChoiceEntry(sizer,
-                                                                       '%s: ' % dispName,
-                                                                       config.getResourceAttrValues(attr)(self),
-                                                                       config.getResourceAttrDefault(attr)(self),
-                                                                       attrName)
-            elif attrType in (config.RES_TYPE_SINGLE_ARRAY, ):
-                self.ctrl[attrName] = []
-                for index in xrange(attrDim):
-                    dummy, ctrl = self.addLabelTextCtrlEntry(sizer, 
-                                                             '%s [%s]: ' % (dispName, index), 
-                                                             attrName)
-                    self.ctrl[attrName].append(ctrl)
-            elif attrType in (config.RES_TYPE_LIST_ARRAY, ):
-                self.ctrl[attrName] = []
-                for index in xrange(attrDim):
-                    dummy, ctrl = self.addLabelChoiceEntry(sizer, 
-                                                           '%s [%s]: ' % (dispName, index), 
-                                                           config.getResourceAttrValues(attr)(self),
-                                                           config.getResourceAttrDefault(attr)(self),
-                                                           attrName)
-                    self.ctrl[attrName].append(ctrl)
+#             dispName = config.getResourceAttrDisplay(attr)
+#             attrType = config.getResourceAttrType(attr)
+#             attrDim  = config.getResourceAttrDim(attr)
+#             if attrType in (config.RES_TYPE_SINGLE, ):
+#                 dummy, self.ctrl[attrName] = self.addLabelTextCtrlEntry(sizer, '%s: ' % dispName, attrName)
+#             elif attrType in (config.RES_TYPE_LIST, ):
+#                 dummy, self.ctrl[attrName]  = self.addLabelChoiceEntry(sizer,
+#                                                                        '%s: ' % dispName,
+#                                                                        config.getResourceAttrValues(attr)(self),
+#                                                                        config.getResourceAttrDefault(attr)(self),
+#                                                                        attrName)
+#             elif attrType in (config.RES_TYPE_SINGLE_ARRAY, ):
+#                 self.ctrl[attrName] = []
+#                 for index in xrange(attrDim):
+#                     dummy, ctrl = self.addLabelTextCtrlEntry(sizer, 
+#                                                              '%s [%s]: ' % (dispName, index), 
+#                                                              attrName)
+#                     self.ctrl[attrName].append(ctrl)
+#             elif attrType in (config.RES_TYPE_LIST_ARRAY, ):
+#                 self.ctrl[attrName] = []
+#                 for index in xrange(attrDim):
+#                     dummy, ctrl = self.addLabelChoiceEntry(sizer, 
+#                                                            '%s [%s]: ' % (dispName, index), 
+#                                                            config.getResourceAttrValues(attr)(self),
+#                                                            config.getResourceAttrDefault(attr)(self),
+#                                                            attrName)
+#                     self.ctrl[attrName].append(ctrl)
+            self.ctrl[attrName] = self.addCtrlFromResource(sizer, attr)
         return sizer
+
+    def getSelectionFromResource(self, attr, ctrl):
+        dicta = []
+        attrName = config.getResourceAttrName(attr)
+        attrType = config.getResourceAttrType(attr)
+        attrDim  = config.getResourceAttrDim(attr)
+        if attrType in (config.RES_TYPE_SINGLE, ):
+            dicta = str(ctrl[attrName].GetValue())
+        elif attrType in (config.RES_TYPE_LIST, ):
+            dicta = config.getResourceAttrValues(attr)(self)[ctrl[attrName].GetSelection()] 
+        elif attrType in (config.RES_TYPE_SINGLE_ARRAY, ):
+            for index in xrange(attrDim):
+                dicta.append(str(ctrl[attrName][index].GetValue()))
+        elif attrType in (config.RES_TYPE_LIST_ARRAY, ):
+            for index in xrange(attrDim):
+                dicta.append(config.getResourceAttrValues(attr)(self)[ctrl[attrName][index].GetSelection()])
+        elif attrType in (config.RES_TYPE_GROUP, ):
+            for index in xrange(attrDim):
+                dicta.append({})
+                for childAttr in config.getResourceAttrValues(attr):
+                    childAttrName = config.getResourceAttrName(childAttr)
+                    dicta[index][childAttrName] = self.getSelectionFromResource(childAttr, self.ctrl[attrName][index])
+        return dicta
 
     def GetSelection(self):
 #         yamlData = {self.classId: {}, }
@@ -108,20 +185,29 @@ class ConfigDialog(commonDialog.CommonDialog):
         dictToEntity = {}    
         for attr in config.getResourceAttrs(self.resource):
             attrName = config.getResourceAttrName(attr)
-            attrType = config.getResourceAttrType(attr)
-            attrDim  = config.getResourceAttrDim(attr)
-            if attrType in (config.RES_TYPE_SINGLE, ):
-                dictToEntity[attrName] = str(self.ctrl[attrName].GetValue())
-            elif attrType in (config.RES_TYPE_LIST, ):
-                dictToEntity[attrName] = config.getResourceAttrValues(attr)(self)[self.ctrl[attrName].GetSelection()] 
-            elif attrType in (config.RES_TYPE_SINGLE_ARRAY, ):
-                dictToEntity[attrName] = []
-                for index in xrange(attrDim):
-                    dictToEntity[attrName].append(str(self.ctrl[attrName][index].GetValue()))
-            elif attrType in (config.RES_TYPE_LIST_ARRAY, ):
-                dictToEntity[attrName] = []
-                for index in xrange(attrDim):
-                    dictToEntity[attrName].append(config.getResourceAttrValues(attr)(self)[self.ctrl[attrName][index].GetSelection()])
+#             attrType = config.getResourceAttrType(attr)
+#             attrDim  = config.getResourceAttrDim(attr)
+#             if attrType in (config.RES_TYPE_SINGLE, ):
+#                 dictToEntity[attrName] = str(self.ctrl[attrName].GetValue())
+#             elif attrType in (config.RES_TYPE_LIST, ):
+#                 dictToEntity[attrName] = config.getResourceAttrValues(attr)(self)[self.ctrl[attrName].GetSelection()] 
+#             elif attrType in (config.RES_TYPE_SINGLE_ARRAY, ):
+#                 dictToEntity[attrName] = []
+#                 for index in xrange(attrDim):
+#                     dictToEntity[attrName].append(str(self.ctrl[attrName][index].GetValue()))
+#             elif attrType in (config.RES_TYPE_LIST_ARRAY, ):
+#                 dictToEntity[attrName] = []
+#                 for index in xrange(attrDim):
+#                     dictToEntity[attrName].append(config.getResourceAttrValues(attr)(self)[self.ctrl[attrName][index].GetSelection()])
+#             elif attrType in (config.RES_TYPE_GROUP, ):
+#                 dictToEntity[attrName] = {}
+#                 dictToEntity[attrName] = []
+#                 for index in xrange(attrDim):
+#                     dictToEntity[attrName].append({})
+#                     for childAttr in config.getResourceAttrValues(attr):
+#                         childAttrName = config.getResourceAttrName(childAttr)
+#                         dictToEntity[attrName][index][childAttrName] = pass
+            dictToEntity[attrName] = self.getSelectionFromResource(attr, self.ctrl)
                             
         entity = Entity(self.resource, dictToEntity)
         return entity

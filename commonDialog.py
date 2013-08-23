@@ -28,11 +28,12 @@ class CommonDialog(wx.Dialog):
         
     def _handleDefaults(self, fieldName):
         txtValue = ''
-        if isinstance(fieldName, tuple) or isinstance(fieldName, list):
-            fieldValue = getattr(self.defaults, fieldName[0], [])
-            txtValue = fieldValue[fieldName[1]] if fieldValue else ''
-        else:
-            txtValue = getattr(self.defaults, fieldName, '')
+        if self.defaults:
+            if isinstance(fieldName, tuple) or isinstance(fieldName, list):
+                fieldValue = getattr(self.defaults, fieldName[0], [])
+                txtValue = fieldValue[fieldName[1]] if fieldValue else ''
+            else:
+                txtValue = getattr(self.defaults, fieldName, '')
         return txtValue
     
     def _createLabelTextCtrlEntry(self, label, fieldName, size, validator):

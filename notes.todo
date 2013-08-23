@@ -1,0 +1,8 @@
+Custom Dialog:
+	- 08/22/13 End point edit don't update properly paths attributes: xena and resource ports. @done
+	- 08/22/13 Add an static panel for paths.
+	- 08/22/13 Handle Events.
+	
+Events:
+	- 08/22/13 Create a way for adding dependencies between different attributes.
+	- 08/22/13 Create a way to feed those dependency in validators for TextCtrl widgets.

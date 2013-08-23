@@ -14,6 +14,7 @@ RESOURCES = [service.RESOURCE,
 
 RES_TYPE_SINGLE        = 1
 RES_TYPE_LIST          = 2
+RES_TYPE_GROUP         = 3
 RES_TYPE_SINGLE_ARRAY  = 11
 RES_TYPE_LIST_ARRAY    = 12
 
@@ -50,6 +51,8 @@ def getResourceAttrType(attr):
         return RES_TYPE_SINGLE_ARRAY
     elif resType in ('list', ) and resDim:
         return RES_TYPE_LIST_ARRAY
+    elif resType in ('group', ) and resDim:
+        return RES_TYPE_GROUP
     else:
         return None 
 
