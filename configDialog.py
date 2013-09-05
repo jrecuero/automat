@@ -37,13 +37,17 @@ class Entity(object):
         return self.name
 
     def getData(self):
+        """ Return data to be displayed in a log window.
+
+        It returns a string with information to be displayed in edit/remove
+        widget.
+        """
         result  = '[%s] ' % config.getResourceTag(self._resource)
         result += '%s ' % self.name
         for data in [data for data in config.getResourceAttrs(self._resource) if data['name'] not in ('name', )]:
             if config.getResourceAttrEnable(data):
                 result += '%s ' % getattr(self, data['name'], None)
         return result
-        #return self.getYamlDict()
 
     def _toStr(self):
         return str(self.getData())
@@ -59,6 +63,10 @@ class Entity(object):
         return dialog
 
     def getYamlDict(self):
+        """ Return dictionary to be YAMLed.
+
+        It returns the dictionary to be used to generate YAML data.
+        """
         classId = config.getResourceId(self._resource)
         yamlData = {classId: {}, }
         yamlData[classId][self.name] = {}
@@ -70,12 +78,27 @@ class Entity(object):
 
 
 class ConfigDialog(commonDialog.CommonDialog):
+    """ Class with all widgets created when a new configuration entry.
+
+    A configuration entry could be any service, access port, tunnel, end point,
+    event, ... to be added as a YAML input.
+
+    It process dictionary with data for every entry, and generates all required
+    fields.
+    """
 
     def __init__(self, parent, ID, resource, defaults=None):
+        """ Class initialization method.
+        """
         self.resource = resource
         commonDialog.CommonDialog.__init__(self, parent, ID, 'Create %s' % config.getResourceId(self.resource), size=(400, 300), defaults=defaults)
 
     def addCtrlFromResource(self, attr, index=None):
+        """ Create a new control widget in the dialog.
+
+        It process data from a new entry and it creates the proper widget for
+        that. Data is coming from the resource.attribute entry.
+        """
         attrName = config.getResourceAttrName(attr)
         dispName = config.getResourceAttrDisplay(attr)
         attrType = config.getResourceAttrType(attr)
@@ -116,24 +139,30 @@ class ConfigDialog(commonDialog.CommonDialog):
             for i in xrange(attrDim):
                 lbl.append({})
                 ctrl.append({})
-                for childAttr in [aAttr for aAttr in config.getResourceAttrValues(attr) if self.isAttrEnable(aAttr)]:
+                for childAttr in [aAttr for aAttr in config.getResourceAttrValues(attr) if config.getResourceAttrEnable(aAttr)]:
                     childAttrName = config.getResourceAttrName(childAttr)
                     lbl[i][childAttrName], ctrl[i][childAttrName] = self.addCtrlFromResource(childAttr, i)
         return (lbl, ctrl)
 
-    def isAttrEnable(self, attr):
-        return  config.getResourceAttrEnable(attr)
-
     def createCtrl(self):
+        """ Creates all widgets for a given resource.
+
+        It creates all widget for all attributes in the given resource.
+        """
         self.sizer = wx.FlexGridSizer(rows=len(config.getResourceAttrs(self.resource)), cols=2, hgap=5, vgap=10)
         self.lbl, self.ctrl = {}, {}
         for attr in config.getResourceAttrs(self.resource):
-            if self.isAttrEnable(attr):
+            if config.getResourceAttrEnable(attr):
                 attrName = config.getResourceAttrName(attr)
                 self.lbl[attrName], self.ctrl[attrName] = self.addCtrlFromResource(attr)
         return self.sizer
 
     def createNewCtrl(self, attr):
+        """ Create a new control on the fly.
+
+        It creates a new control when dialog has been already created and
+        populated
+        """
         attrName = config.getResourceAttrName(attr)
         if not hasattr(self.lbl, attrName) and not hasattr(self.ctrl, attrName):
             self.lbl[attrName], self.ctrl[attrName] = self.addCtrlFromResource(attr)
@@ -143,6 +172,11 @@ class ConfigDialog(commonDialog.CommonDialog):
             self.Update()
 
     def removeNewCtrl(self, attr):
+        """ Remove a new control on the fly.
+
+        It removes a new control that was created when the dialog was already
+        created and populated.
+        """
         attrName = config.getResourceAttrName(attr)
         if hasattr(self.lbl, attrName) and hasattr(self.ctrl, attrName):
             self.sizer.Remove(self.lbl[attrName])
@@ -154,24 +188,61 @@ class ConfigDialog(commonDialog.CommonDialog):
             self.sizer.Layout()
             self.Fit()
 
-    def OnTextCtrlAction(self, ev):
-        evObj = ev.GetEventObject()
-        if evObj.customData is None:
-            return
-        for dep in evObj.customData:
-            fields   = config.getResourceAttrDepsFields(dep)
-            handler  = config.getResourceAttrDepsHandler(dep)
-            newField = config.getResourceAttrDepsNewField(dep)
-            for field, fieldValue in fields.iteritems():
-                if self.ctrl[field].GetValue() not in fieldValue:
-                    return
+    def createNewField(self, dep, newField):
+        """ Create a new field on the fly.
+
+        It creates a new field when conditions are met.
+        """
+        if not config.getResourceAttrDepsEnable(dep):
+            # Create new dialog entry here.
+            config.aetResourceAttrDepsEnable(dep, True)
+            handler = config.getResourceAttrDepsHandler(dep)
             newAttr = config.lookForResourceAttrWithName(self.resource, newField)
             if newAttr:
                 config.setResourceAttrEnable(newAttr, True)
                 config.setResourceAttrValues(newAttr, handler)
                 self.createNewCtrl(newAttr)
 
+    def removeNewField(self, dep, newField):
+        """ Remote a new field on the fly.
+
+        It removes a new field already created when conditions are not met.
+        """
+        if config.getResourceAttrDepsEnable(dep):
+            # Delete dialog entry here, because conditions are not met.
+            config.aetResourceAttrDepsEnable(dep, False)
+            oldAttr = config.lookForResourceAttrWithName(self.resource, newField)
+            if oldAttr:
+                config.setResourceAttrEnable(oldAttr, False)
+                config.setResourceAttrValues(oldAttr, None)
+                self.removeNewCtrl(oldAttr)
+
+    def OnTextCtrlAction(self, ev):
+        """ Check if there are any condition to be met.
+
+        It checks if the input field has any dependency, and proceed to create
+        or remove fields when those dependencies are met or broken.
+        """
+        evObj = ev.GetEventObject()
+        if evObj.customData is None:
+            return
+        for dep in evObj.customData:
+            fields   = config.getResourceAttrDepsFields(dep)
+            newField = config.getResourceAttrDepsNewField(dep)
+            for field, fieldValue in fields.iteritems():
+                if self.ctrl[field].GetValue() not in fieldValue:
+                    break
+            else:
+                self.createNewField(dep, newField)
+
+            self.removeNewField(dep, newField)
+
     def getSelectionFromResource(self, attr, ctrl):
+        """ Get the data entered for a given attribute.
+
+        It returns the dialog values entered by the user for the given
+        attribute.
+        """
         dicta = []
         attrName = config.getResourceAttrName(attr)
         attrType = config.getResourceAttrType(attr)
@@ -197,7 +268,12 @@ class ConfigDialog(commonDialog.CommonDialog):
         return dicta
 
     def GetSelection(self):
+        """ Collect all dialog input data.
 
+        It collects all information entered in the dialog for every widget and
+        it creates an instance that contain that data to be used for YAML code
+        generation.
+        """
         # This will be the new way to pass the data retrieved from the dialog.
         dictToEntity = {}
         for attr in config.getResourceAttrs(self.resource):
