@@ -79,8 +79,16 @@ def getResourceAttrValues(attr):
     return attr['values']
 
 
+def setResourceAttrValues(attr, value):
+    attr['values'] = value
+
+
 def getResourceAttrEnable(attr):
     return attr.setdefault('enable', True)
+
+
+def setResourceAttrEnable(attr, value):
+    attr['enable'] = value
 
 
 def getResourceAttrDeps(attr):
@@ -103,7 +111,7 @@ def isAttrTheAttrName(attr):
     return getResourceAttrName(attr) in ('name', )
 
 
-def lookForResourceAtttWithName(resource, attrName):
+def lookForResourceAttrWithName(resource, attrName):
     for attr in getResourceAttrs(resource):
         if attrName == getResourceAttrName(attr):
             return attr

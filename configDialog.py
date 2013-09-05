@@ -40,7 +40,8 @@ class Entity(object):
         result  = '[%s] ' % config.getResourceTag(self._resource)
         result += '%s ' % self.name
         for data in [data for data in config.getResourceAttrs(self._resource) if data['name'] not in ('name', )]:
-            result += '%s ' % getattr(self, data['name'], None)
+            if config.getResourceAttrEnable(data):
+                result += '%s ' % getattr(self, data['name'], None)
         return result
         #return self.getYamlDict()
 
@@ -63,7 +64,8 @@ class Entity(object):
         yamlData[classId][self.name] = {}
         for attr in [attr for attr in config.getResourceAttrs(self._resource) if not config.isAttrTheAttrName(attr)]:
             attrName = config.getResourceAttrName(attr)
-            yamlData[classId][self.name][attrName] = getattr(self, attrName, None)
+            if config.getResourceAttrEnable(attr):
+                yamlData[classId][self.name][attrName] = getattr(self, attrName, None)
         return yamlData
 
 
@@ -78,7 +80,7 @@ class ConfigDialog(commonDialog.CommonDialog):
         dispName = config.getResourceAttrDisplay(attr)
         attrType = config.getResourceAttrType(attr)
         attrDim  = config.getResourceAttrDim(attr)
-        attrDeps = config.getResourceAttrDim(attr)
+        attrDeps = config.getResourceAttrDeps(attr)
         lbl, ctrl = [], []
         if attrType in (config.RES_TYPE_SINGLE, ):
             lbl, ctrl = self.addLabelTextCtrlEntry(self.sizer,
@@ -139,7 +141,6 @@ class ConfigDialog(commonDialog.CommonDialog):
             self.Fit()
             self.Refresh()
             self.Update()
-            self.Thaw()
 
     def removeNewCtrl(self, attr):
         attrName = config.getResourceAttrName(attr)
@@ -155,16 +156,19 @@ class ConfigDialog(commonDialog.CommonDialog):
 
     def OnTextCtrlAction(self, ev):
         evObj = ev.GetEventObject()
+        if evObj.customData is None:
+            return
         for dep in evObj.customData:
             fields   = config.getResourceAttrDepsFields(dep)
             handler  = config.getResourceAttrDepsHandler(dep)
-            newField = config.getResourceAttrDepsHandler(dep)
+            newField = config.getResourceAttrDepsNewField(dep)
             for field, fieldValue in fields.iteritems():
                 if self.ctrl[field].GetValue() not in fieldValue:
-                    continue
-            print fields, handler, newField
-            newAttr = config.lookForResourceAtttWithName(self.resource, newField)
+                    return
+            newAttr = config.lookForResourceAttrWithName(self.resource, newField)
             if newAttr:
+                config.setResourceAttrEnable(newAttr, True)
+                config.setResourceAttrValues(newAttr, handler)
                 self.createNewCtrl(newAttr)
 
     def getSelectionFromResource(self, attr, ctrl):
@@ -172,6 +176,8 @@ class ConfigDialog(commonDialog.CommonDialog):
         attrName = config.getResourceAttrName(attr)
         attrType = config.getResourceAttrType(attr)
         attrDim  = config.getResourceAttrDim(attr)
+        if attrName not in ctrl:
+            return
         if attrType in (config.RES_TYPE_SINGLE, ):
             dicta = str(ctrl[attrName].GetValue())
         elif attrType in (config.RES_TYPE_LIST, ):
