@@ -1,11 +1,20 @@
 #!/usr/bin/env python
 
+
 def getResourceId():
     return 'Event'
 
 
 def getResourceTag():
     return 'events'
+
+
+def _getNames(dlg):
+    return ['flowdomain', 'flowpoint', 'tunnel', 'clienterp', 'networkerp', 'scenario', 'verify', 'oid', 'unittest']
+
+
+def _getDefaultName(dlg):
+    return 'flowdomain'
 
 
 def _getAllServices(dlg):
@@ -38,8 +47,8 @@ RESOURCE = {'id':   getResourceId(),
                        'name': 'name',
                        'type': 'str',
                        'dim': None,
-                       'default': None,
-                       'values': None, },
+                       'default': _getDefaultName,
+                       'values': _getNames, },
                       {'display': 'Action',
                        'name': 'action',
                        'deps': [{'fields': {'name': 'flowdomain', 'action': ['create', 'delete', 'update'], },

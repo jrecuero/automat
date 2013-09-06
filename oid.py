@@ -2,19 +2,11 @@
 
 
 def getResourceId():
-    return 'Service'
+    return 'OID'
 
 
 def getResourceTag():
-    return 'services'
-
-
-def _getServiceTypes(dlg):
-    return ['ELINE', 'EVLINE', 'ELAN', 'EVLAN']
-
-
-def _getDefaultServiceType(dlg):
-    return 'EVLAN'
+    return 'oids'
 
 
 RESOURCE = {'id':   getResourceId(),
@@ -31,15 +23,15 @@ RESOURCE = {'id':   getResourceId(),
                        'dim': None,
                        'default': None,
                        'values':  None, },
-                      {'display': 'Type',
-                       'name': 'type',
-                       'type': 'list',
+                      {'display': 'Oid',
+                       'name': 'oid',
+                       'type': 'str',
                        'dim': None,
-                       'default': _getDefaultServiceType,
-                       'values': _getServiceTypes, },
-                      {'display': 'Isid',
-                       'name': 'isid',
-                       'type': 'int',
+                       'default': None,
+                       'values': None, },
+                      {'display': 'Location',
+                       'name': 'location',
+                       'type': 'str',
                        'dim': None,
                        'default': None,
                        'values':  None, }, ], }

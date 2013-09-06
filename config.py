@@ -3,6 +3,7 @@ import tunnel
 import accessport
 import clientring
 import networkring
+import oid
 import endpoint
 import event
 
@@ -11,6 +12,7 @@ RESOURCES = [service.RESOURCE,
              accessport.RESOURCE,
              clientring.RESOURCE,
              networkring.RESOURCE,
+             oid.RESOURCE,
              endpoint.RESOURCE,
              event.RESOURCE, ]
 

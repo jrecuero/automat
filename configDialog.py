@@ -91,41 +91,71 @@ class ConfigDialog(commonDialog.CommonDialog):
         """ Class initialization method.
         """
         self.resource = resource
-        self.cache    = {}
+        self.cache    = {'attrs': [], 'deps': [], }
         commonDialog.CommonDialog.__init__(self, parent, ID, 'Create %s' % config.getResourceId(self.resource), size=(400, 300), defaults=defaults)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
     def OnClose(self, ev):
         self.disableAllAttributes()
+        self.disableAllAtributeDependencies()
         self.Destroy()
 
-    def enableAttribute(self, attr):
-        """ Enable attribute to be display in the dialog.
-        
+    def enableAttribute(self, attr, handler):
+        """ Enable attribute to be displayed in the dialog.
+
         It enables the given attribute to be displayed in the dialog, and it
         is cached internally in order to be re-initialized when dialog is
         closed.
         """
         config.setResourceAttrEnable(attr, True)
-        attrName = config.getResourceAttrName(attr)
-        self.cache[attrName] = attr
+        config.setResourceAttrValues(attr, handler)
+        if attr not in self.cache['attrs']:
+            self.cache['attrs'].append(attr)
+
+    def enableAttributeDependency(self, dep):
+        """ Enable attribute dependency to be displayed in the dialog.
+
+        It enabled the given attribute dependency to be displayed in the
+        dialog, and it cached internally in order to be re-initialized when
+        dialog is closed.
+        """
+        config.setResourceAttrDepsEnable(dep, True)
+        if dep not in self.cache['deps']:
+            self.cache['deps'].append(dep)
 
     def disableAttribute(self, attr):
-        """ Disable attribute to be display in the dialog.
-        
+        """ Disable attribute to be displayed in the dialog.
+
         It disables the given attribute to be displayed in the dialog, and it
         is removed from the cached .
         """
         config.setResourceAttrEnable(attr, False)
-        attrName = config.getResourceAttrName(attr)
-        del self.cache[attrName]
-        
+        config.setResourceAttrValues(attr, None)
+        if attr in self.cache['attrs']:
+            self.cache['attrs'].remove(attr)
+
+    def disableAttributeDependency(self, dep):
+        """ Disable attribute dependency to be displayed in the dialog.
+
+        It disables the given attribute dependency to be displayed in the
+        dialog, and it is removed from the cached.
+        """
+        config.setResourceAttrDepsEnable(dep, False)
+        if dep in self.cache['deps']:
+            self.cache['deps'].remove(dep)
+
     def disableAllAttributes(self):
         """ Disable all attributes cached.
         """
-        for attr in self.cache.values():
+        for attr in self.cache['attrs']:
             config.setResourceAttrEnable(attr, False)
-            
+
+    def disableAllAtributeDependencies(self):
+        """ Disable all attributes dependencies cached.
+        """
+        for dep in self.cache['deps']:
+            config.setResourceAttrDepsEnable(dep, False)
+
     def addCtrlFromResource(self, attr, index=None):
         """ Create a new control widget in the dialog.
 
@@ -228,12 +258,11 @@ class ConfigDialog(commonDialog.CommonDialog):
         """
         if not config.getResourceAttrDepsEnable(dep):
             # Create new dialog entry here.
-            config.setResourceAttrDepsEnable(dep, True)
             handler = config.getResourceAttrDepsHandler(dep)
             newAttr = config.lookForResourceAttrWithName(self.resource, newField)
             if newAttr:
-                self.enableAttribute(newAttr)
-                config.setResourceAttrValues(newAttr, handler)
+                self.enableAttribute(newAttr, handler)
+                self.enableAttributeDependency(dep)
                 self.createNewCtrl(newAttr)
 
     def removeNewField(self, dep, newField):
@@ -243,11 +272,10 @@ class ConfigDialog(commonDialog.CommonDialog):
         """
         if config.getResourceAttrDepsEnable(dep):
             # Delete dialog entry here, because conditions are not met.
-            config.setResourceAttrDepsEnable(dep, False)
             oldAttr = config.lookForResourceAttrWithName(self.resource, newField)
             if oldAttr:
                 self.disableAttribute(oldAttr)
-                config.setResourceAttrValues(oldAttr, None)
+                self.disableAttributeDependency(dep)
                 self.removeNewCtrl(oldAttr)
 
     def OnTextCtrlAction(self, ev):
@@ -263,7 +291,10 @@ class ConfigDialog(commonDialog.CommonDialog):
             fields   = config.getResourceAttrDepsFields(dep)
             newField = config.getResourceAttrDepsNewField(dep)
             for field, fieldValue in fields.iteritems():
-                if self.ctrl[field].GetValue() not in fieldValue:
+                attr      = config.lookForResourceAttrWithName(self.resource, field)
+                attrValue = self.getSelectionFromResource(attr, self.ctrl)
+                #if self.ctrl[field].GetValue() not in fieldValue:
+                if attrValue[0] not in fieldValue:
                     break
             else:
                 self.createNewField(dep, newField)
@@ -277,7 +308,7 @@ class ConfigDialog(commonDialog.CommonDialog):
         It returns the dialog values entered by the user for the given
         attribute.
         """
-        dicta = []
+        dicta    = []
         attrName = config.getResourceAttrName(attr)
         attrType = config.getResourceAttrType(attr)
         attrDim  = config.getResourceAttrDim(attr)
@@ -314,6 +345,9 @@ class ConfigDialog(commonDialog.CommonDialog):
             attrName = config.getResourceAttrName(attr)
             dictToEntity[attrName] = self.getSelectionFromResource(attr, self.ctrl)
 
-        self.disableAllAttributes()
         entity = Entity(self.resource, dictToEntity)
+        # After selection has been returned, return all attribuites and
+        # attribute dependencies to default values.
+        self.disableAllAttributes()
+        self.disableAllAtributeDependencies()
         return entity

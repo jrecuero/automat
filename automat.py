@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import wx
-import event
 import resource
 import config
 import configDialog
