@@ -56,6 +56,7 @@ class Automatization(wx.Frame):
             instance = dialog.GetSelection()
             self.resourceHdlr.addResource(instance)
             self._sendToOutput()
+        dialog.Destroy()
 
     def createResourceButtons(self, panel):
         """ Create all resource buttons.
@@ -132,10 +133,6 @@ class Automatization(wx.Frame):
         dialog   = configDialog.ConfigDialog(self, -1, resource)
         self._createResource(dialog)
 
-    def OnClickEvent(self, ev):
-        eventDlg = event.EventDialog(self, -1)
-        self._createResource(eventDlg)
-
     def OnClickEdit(self, ev):
         """ OnClick edit resource event.
 
@@ -151,6 +148,7 @@ class Automatization(wx.Frame):
                 instance = dialog.GetSelection()
                 self.resourceHdlr.replaceResource(instance, selection)
                 self._sendToOutput()
+            dialog.Destroy()
 
     def OnClickRemove(self, ev):
         """ OnClick delete resource event.

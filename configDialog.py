@@ -91,8 +91,41 @@ class ConfigDialog(commonDialog.CommonDialog):
         """ Class initialization method.
         """
         self.resource = resource
+        self.cache    = {}
         commonDialog.CommonDialog.__init__(self, parent, ID, 'Create %s' % config.getResourceId(self.resource), size=(400, 300), defaults=defaults)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
 
+    def OnClose(self, ev):
+        self.disableAllAttributes()
+        self.Destroy()
+
+    def enableAttribute(self, attr):
+        """ Enable attribute to be display in the dialog.
+        
+        It enables the given attribute to be displayed in the dialog, and it
+        is cached internally in order to be re-initialized when dialog is
+        closed.
+        """
+        config.setResourceAttrEnable(attr, True)
+        attrName = config.getResourceAttrName(attr)
+        self.cache[attrName] = attr
+
+    def disableAttribute(self, attr):
+        """ Disable attribute to be display in the dialog.
+        
+        It disables the given attribute to be displayed in the dialog, and it
+        is removed from the cached .
+        """
+        config.setResourceAttrEnable(attr, False)
+        attrName = config.getResourceAttrName(attr)
+        del self.cache[attrName]
+        
+    def disableAllAttributes(self):
+        """ Disable all attributes cached.
+        """
+        for attr in self.cache.values():
+            config.setResourceAttrEnable(attr, False)
+            
     def addCtrlFromResource(self, attr, index=None):
         """ Create a new control widget in the dialog.
 
@@ -178,7 +211,7 @@ class ConfigDialog(commonDialog.CommonDialog):
         created and populated.
         """
         attrName = config.getResourceAttrName(attr)
-        if hasattr(self.lbl, attrName) and hasattr(self.ctrl, attrName):
+        if attrName in self.lbl and attrName in self.ctrl:
             self.sizer.Remove(self.lbl[attrName])
             self.sizer.Remove(self.ctrl[attrName])
             self.lbl[attrName].Destroy()
@@ -195,11 +228,11 @@ class ConfigDialog(commonDialog.CommonDialog):
         """
         if not config.getResourceAttrDepsEnable(dep):
             # Create new dialog entry here.
-            config.aetResourceAttrDepsEnable(dep, True)
+            config.setResourceAttrDepsEnable(dep, True)
             handler = config.getResourceAttrDepsHandler(dep)
             newAttr = config.lookForResourceAttrWithName(self.resource, newField)
             if newAttr:
-                config.setResourceAttrEnable(newAttr, True)
+                self.enableAttribute(newAttr)
                 config.setResourceAttrValues(newAttr, handler)
                 self.createNewCtrl(newAttr)
 
@@ -210,10 +243,10 @@ class ConfigDialog(commonDialog.CommonDialog):
         """
         if config.getResourceAttrDepsEnable(dep):
             # Delete dialog entry here, because conditions are not met.
-            config.aetResourceAttrDepsEnable(dep, False)
+            config.setResourceAttrDepsEnable(dep, False)
             oldAttr = config.lookForResourceAttrWithName(self.resource, newField)
             if oldAttr:
-                config.setResourceAttrEnable(oldAttr, False)
+                self.disableAttribute(oldAttr)
                 config.setResourceAttrValues(oldAttr, None)
                 self.removeNewCtrl(oldAttr)
 
@@ -234,6 +267,7 @@ class ConfigDialog(commonDialog.CommonDialog):
                     break
             else:
                 self.createNewField(dep, newField)
+                continue
 
             self.removeNewField(dep, newField)
 
@@ -280,5 +314,6 @@ class ConfigDialog(commonDialog.CommonDialog):
             attrName = config.getResourceAttrName(attr)
             dictToEntity[attrName] = self.getSelectionFromResource(attr, self.ctrl)
 
+        self.disableAllAttributes()
         entity = Entity(self.resource, dictToEntity)
         return entity

@@ -8,4 +8,5 @@ Events:
 	- 08/22/13 Create a way to feed those dependency in validators for TextCtrl widgets @done.
 	- 08/29/13 Debug reason additional widgets are not created for events. @done
 	- 09/04/13 Remove control from events when required by values typed. @done
-    - 09/05/13 Test if remove controls work properly.
+  - 09/05/13 Test if remove controls work properly. @done
+  - 09/05/13 Attribute initially disable, they have to be reinitialize when control is closed.
