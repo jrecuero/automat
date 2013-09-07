@@ -14,3 +14,6 @@ Using wxpython for all User Interface widgets.
 09/05/13:   Remove controls has been created in order to remove controls
             entries when dependencies are not met.
 
+09/06/13:   All resources work properly, even events can add and remove widgets
+            on the go. Data is properly set and it can be edit with proper
+            values.

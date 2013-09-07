@@ -9,4 +9,8 @@ Events:
 	- 08/29/13 Debug reason additional widgets are not created for events. @done
 	- 09/04/13 Remove control from events when required by values typed. @done
   - 09/05/13 Test if remove controls work properly. @done
-  - 09/05/13 Attribute initially disable, they have to be reinitialize when control is closed.
+  - 09/05/13 Attribute initially disable, they have to be reinitialize when control is closed. @done
+  
+YAML Format:
+  - 09/06/13 Save YAML format into a YAML file.
+	

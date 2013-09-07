@@ -1,6 +1,7 @@
 import wx
 import commonDialog
 import config
+import copy
 
 
 class Entity(object):
@@ -294,7 +295,7 @@ class ConfigDialog(commonDialog.CommonDialog):
                 attr      = config.lookForResourceAttrWithName(self.resource, field)
                 attrValue = self.getSelectionFromResource(attr, self.ctrl)
                 #if self.ctrl[field].GetValue() not in fieldValue:
-                if attrValue[0] not in fieldValue:
+                if attrValue not in fieldValue:
                     break
             else:
                 self.createNewField(dep, newField)
@@ -345,8 +346,8 @@ class ConfigDialog(commonDialog.CommonDialog):
             attrName = config.getResourceAttrName(attr)
             dictToEntity[attrName] = self.getSelectionFromResource(attr, self.ctrl)
 
-        entity = Entity(self.resource, dictToEntity)
-        # After selection has been returned, return all attribuites and
+        entity = Entity(copy.deepcopy(self.resource), dictToEntity)
+        # After selection has been returned, return all attributes and
         # attribute dependencies to default values.
         self.disableAllAttributes()
         self.disableAllAtributeDependencies()
